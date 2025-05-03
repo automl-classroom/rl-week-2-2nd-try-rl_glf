@@ -1,11 +1,7 @@
 from __future__ import annotations
 
 import gymnasium as gym
-<<<<<<< HEAD
 import numpy as np
-=======
-
->>>>>>> 4f4e0a96e801d99172b77ac185b6e7807a1479e8
 
 # ------------- TODO: Implement the following environment -------------
 class MyEnv(gym.Env):
@@ -34,7 +30,6 @@ class MyEnv(gym.Env):
     metadata = {"render_modes": ["human"]}
 
     def __init__(self):
-<<<<<<< HEAD
         self.observation_space = gym.spaces.Discrete(2)
         self.action_space = gym.spaces.Discrete(2)
         self.state = 0  # initial state
@@ -66,10 +61,6 @@ class MyEnv(gym.Env):
         T[1, 1, 1] = 1.0
         return T
 
-=======
-        """Initializes the observation and action space for the environment."""
-        pass
->>>>>>> 4f4e0a96e801d99172b77ac185b6e7807a1479e8
 
 
 class PartialObsWrapper(gym.Wrapper):
@@ -91,7 +82,6 @@ class PartialObsWrapper(gym.Wrapper):
     metadata = {"render_modes": ["human"]}
 
     def __init__(self, env: gym.Env, noise: float = 0.1, seed: int | None = None):
-<<<<<<< HEAD
         super().__init__(env)
         self.noise = noise
         self.np_random = np.random.default_rng(seed)
@@ -111,6 +101,3 @@ class PartialObsWrapper(gym.Wrapper):
             return int(self.rng.choice(others))
         else:
             return int(true_obs)
-=======
-        pass
->>>>>>> 4f4e0a96e801d99172b77ac185b6e7807a1479e8
