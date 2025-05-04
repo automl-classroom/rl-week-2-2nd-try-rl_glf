@@ -1,3 +1,5 @@
+# file: week_2/value_iteration.py
+
 from __future__ import annotations
 
 from typing import Any, Tuple
@@ -9,27 +11,7 @@ from rl_exercises.environments import MarsRover
 
 
 class ValueIteration(AbstractAgent):
-    """Agent that computes an optimal policy via Value Iteration.
-
-    Parameters
-    ----------
-    env : MarsRover or gymnasium.Env
-        The target environment, must expose `.states`, `.actions`,
-        `.transition_matrix` and `.get_reward_per_action()`.
-    gamma : float, default=0.9
-        Discount factor for future rewards.
-    seed : int, default=333
-        Random seed for tie‐breaking among equally‐good actions.
-
-    Attributes
-    ----------
-    V : np.ndarray, shape (n_states,)
-        The computed optimal value function.
-    pi : np.ndarray, shape (n_states,)
-        The greedy policy derived from V.
-    policy_fitted : bool
-        Whether value iteration has been run yet.
-    """
+    """Agent that computes an optimal policy via Value Iteration."""
 
     def __init__(
         self,
@@ -46,13 +28,14 @@ class ValueIteration(AbstractAgent):
         self.gamma = gamma
         self.seed = seed
 
-        # TODO: Extract MDP components from the environment
-        self.S = self.env.states
-        self.A = self.env.actions
-        self.T = self.env.transition_matrix
-        self.R_sa = self.env.get_reward_per_action()
-        self.n_states = len(self.S)
-        self.n_actions = len(self.A)
+        # 从环境里提取 MDP 成分
+        self.S = getattr(env, "states", np.arange(env.observation_space.n))
+        self.A = getattr(env, "actions", np.arange(env.action_space.n))
+        self.T = env.transition_matrix  # shape (nS, nA, nS)
+        self.R_sa = env.get_reward_per_action()  # shape (nS, nA)
+
+        self.n_states = self.R_sa.shape[0]
+        self.n_actions = self.R_sa.shape[1]
 
         # placeholders
         self.V = np.zeros(self.n_states, dtype=float)
@@ -71,9 +54,8 @@ class ValueIteration(AbstractAgent):
             seed=self.seed,
         )
 
-        # TODO: Call value_iteration() with extracted MDP components        
-        self.V = V_opt
-        self.pi = pi_opt
+        self.V[:] = V_opt
+        self.pi[:] = pi_opt
         self.policy_fitted = True
 
     def predict_action(
@@ -82,13 +64,11 @@ class ValueIteration(AbstractAgent):
         info: dict | None = None,
         evaluate: bool = False,
     ) -> tuple[int, dict]:
-        """Choose action = π(observation). Runs update if needed."""
+        """Choose action = π(observation)."""
         if not self.policy_fitted:
             self.update_agent()
+        return int(self.pi[observation]), {}
 
-        # TODO: Return action from learned policy
-        action = self.pi[observation]
-        return action, {}
 
 
 def value_iteration(
@@ -99,57 +79,26 @@ def value_iteration(
     seed: int | None = None,
     epsilon: float = 1e-8,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    """Run Value Iteration on a finite MDP.
+    """Run Value Iteration on a finite MDP."""
+    nS, nA = R_sa.shape
+    V = np.zeros(nS, dtype=float)
+    pi = np.zeros(nS, dtype=int)
 
-    Solves for
-        V*(s) = max_a [ R_sa[s,a] + γ ∑_{s'} T[s,a,s'] V*(s') ]
-    and then
-        π*(s) = argmax_a [ R_sa[s,a] + γ ∑_{s'} T[s,a,s'] V*(s') ].
-
-    Parameters
-    ----------
-    T : np.ndarray, shape (n_states, n_actions, n_states)
-        Transition probabilities.
-    R_sa : np.ndarray, shape (n_states, n_actions)
-        Rewards for each (state, action).
-    gamma : float
-        Discount factor (0 ≤ γ < 1).
-    seed : int or None
-        RNG seed for tie‐breaking among equal actions.
-    epsilon : float
-        Stopping threshold on max value‐update difference.
-
-    Returns
-    -------
-    V : np.ndarray, shape (n_states,)
-        Optimal state‐value function.
-    pi : np.ndarray, shape (n_states,)
-        Greedy policy w.r.t. V, with random tie‐breaking.
-    """
-    n_states, n_actions = R_sa.shape
-    V = np.zeros(n_states, dtype=float)
-    rng = np.random.default_rng(seed)
-    pi = np.zeros(n_states, dtype=int)
-
-    # TODO: update V using the Q values until convergence
     while True:
-        delta = 0
-        V_new = np.zeros_like(V)
-        for s in range(n_states):
-            Q_sa = np.zeros(n_actions)
-            for a in range(n_actions):
-                Q_sa[a] = R_sa[s, a] + gamma * np.sum(T[s, a] * V)
-            V_new[s] = np.max(Q_sa)
-            delta = max(delta, abs(V_new[s] - V[s]))
-        V = V_new
+        delta = 0.0
+        for s in range(nS):
+            # 计算所有动作的 Q 值
+            q_sa = R_sa[s] + gamma * (T[s] @ V)
+            v_new = np.max(q_sa)
+            delta = max(delta, abs(V[s] - v_new))
+            V[s] = v_new
         if delta < epsilon:
             break
 
-    # TODO: Extract the greedy policy from V and update pi
-    for s in range(n_states):
-        Q_sa = np.zeros(n_actions)
-        for a in range(n_actions):
-            Q_sa[a] = R_sa[s, a] + gamma * np.sum(T[s, a] * V)
-        best_actions = np.argwhere(Q_sa == np.max(Q_sa)).flatten()
-        pi[s] = rng.choice(best_actions)
+    # 最终 greedy 策略
+    for s in range(nS):
+        q_sa = R_sa[s] + gamma * (T[s] @ V)
+        # argmax 返回第一个最大值位置，保证确定性
+        pi[s] = int(np.argmax(q_sa))
+
     return V, pi
