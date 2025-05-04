@@ -1,0 +1,18 @@
+{
+	"folders": [
+		{
+			"name": "automl-ss25-week1-introduction-glf",
+			"path": "../../../Automated Machine Learning/ex01/automl-ss25-week1-introduction-glf"
+		},
+		{
+			"path": "../../../Automated Machine Learning/ex02/automl-ss25-week-2-hpo-basics-glf"
+		},
+		{
+			"path": "../../../Automated Machine Learning/ex03/automl-ss24-week-3-hpo-bo-glf-master"
+		},
+		{
+			"path": "."
+		}
+	],
+	"settings": {}
+}
